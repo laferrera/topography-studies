@@ -21,8 +21,8 @@ int[][] lineVertices;
 int maxheight;
  
 // position in the DEM
-int offsetx=500;
-int offsety=500;
+int offsetx=400;
+int offsety=200;
  
 //tweak these according to map
 float V_SCALE=1.0;
@@ -39,7 +39,7 @@ public void setup() {
   stroke(255);
   resetArray();
   loadDEM();
-  //noLoop();
+  noLoop();
 }
  
 public void loadDEM() {
@@ -119,8 +119,6 @@ public void animateCurve() {
 }
  
 public void draw() {
-  background(0);
-  stroke(255);
   resetArray();
   resetLineVertices();
   animateCurve();
@@ -135,33 +133,32 @@ public void draw() {
   //loadPixels();  
   //oldPlotLines();
   //updatePixels();
-    newPlotLineVertices();
-    //printArray(lineVertices);      
+    newPlotLineVertices();      
+    
+    for (int col=0;col<512;col++) {      
+      beginShape();        
+      noFill();
+       for (int row=0;row<512;row++) {
+        if(lineVertices[row][col] > 0){
+          int x = row * 10;
+          curveVertex(x, lineVertices[row][col]);
+        }    
+      }
+      endShape();
+    }
+    
   
   
-  for (int y=0;y<512;y++) {       
-    //beginShape();     
-   for (int x=0;x<512;x++) { 
-      if(lineVertices[x][y] > 0){
-        //curveVertex(x, y);
-        point(x, y);
-        println("x,y, val :",x,y, lineVertices[x][y]);
-      } 
-    } 
-    //endShape();    
-  }
+  //  for (int row=0;row<512;row++) {       
+  //   for (int col=0;col<512;col++) { 
+  //    if(lineVertices[row][col] > -1){
+  //      //point(row, col);
+  //      point(row,lineVertices[row][col]);
+  //      //println("x,y, val :",row,col, lineVertices[row][col]);
+  //    } 
+  //  }     
+  //}
   
-  
-      ////curvevertex
-    //for(int y=0; y<h; y++){
-    //  beginShape();
-    //  for(int x=0; x<w-1;x++){
-    //    curveVertex(x*scale, y*scale, terrain[x][y]);
-    //    //curveVertex((x+1)*scale, y*scale, terrain[x][y+1]);
-    //  }
-    //  endShape();
-    //}
-    ////end curvevertex
   
   if (bExportSVG){
     println("finished export");
@@ -189,15 +186,19 @@ void mousePosition(){
 }
 
 void newPlotLineVertices(){
-    for (int row=0;row<79;row++) {
+  //79 rows / 49 cols
+    for (int col=2;col<49;col++) {  
+    //for (int row=0;row<79;row++) {
     int x=0;
-    int y=512-(5*row);
-    for (int col=2;col<3;col++) {
-      x=10*col;
+    //for (int col=2;col<49;col++) {
+    for (int row=0;row<79;row++) {
+      int y=512-(5*row);
+      //x=10*col;
+      x=col;
       int tx=x+10;
       int ty=y;
       //plotLine(x,y-(int)elev[col][row],tx,ty-(int)elev[col+1][row]);
-       plotLineVertices(x,y-(int)elev[col][row],tx,ty-(int)elev[col+1][row]);
+       plotLineVertices(row,col,x,y-(int)elev[col][row],tx,ty-(int)elev[col+1][row]);
       // optional crosshatch..
       //if (hatch) plotLine(x,y-(int)elev[col][row],tx,ty-5-(int)elev[col+1][row+1]);
       x=tx;
@@ -207,7 +208,7 @@ void newPlotLineVertices(){
 }
 
 
-void plotLineVertices(int x0, int y0, int x1, int y1){
+void plotLineVertices(int row, int col, int x0, int y0, int x1, int y1){
   // modified bresenham algorithm
   // lines are drawn from frontmost to backmost, and a point is only shown IF
   // its y coordinate is closer to the top of the screen than any pixel drawn in this column.
@@ -223,7 +224,11 @@ void plotLineVertices(int x0, int y0, int x1, int y1){
     if (y0<miny[x0]) {
       if (y0<0 || y0>512) break;
       //pixels[y0*512+x0]=0xFFFFFFFF ; // set pixel to white opaque
-      lineVertices[x0][y0] = y0;
+      
+      //lineVertices[col][y0] = y0;
+      
+      lineVertices[col][row] = y0;
+      
       //println("x0,y0: ", x0, y0);
       miny[x0]=y0;
     }
