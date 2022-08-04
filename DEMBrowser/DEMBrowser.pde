@@ -8,6 +8,10 @@
 // demo uses a one-degree square covering the Scottish borders and Edinburgh
 // you may spot vertical lines - these are "voids" in the data.
  
+import processing.svg.*;
+import java.util.*;
+ 
+ 
 public int[] miny;
 public float[][] elev;
  
@@ -24,6 +28,8 @@ float V_SCALE=1.0;
  
 // optional cross-hatching
 boolean hatch=false;
+
+boolean bExportSVG = false;
  
 public void setup() {
   size(512,512);
@@ -74,6 +80,7 @@ public void loadDEM() {
  
 public void keyPressed() {
   if (key=='h' || key=='H') hatch=!hatch;
+  if (key == 'e') bExportSVG = true;
 }
  
 public void resetArray() {
@@ -103,6 +110,15 @@ public void draw() {
   resetArray();
   animateCurve();
   loadPixels();
+  if (bExportSVG)
+  {
+    println("begining export");
+    // P3D needs begin Raw
+    //beginRaw(SVG, "data/exports/export_"+timestamp()+".svg");
+    beginRecord(SVG, "data/exports/export_"+timestamp()+".svg");
+  }
+    
+  
   for (int row=0;row<79;row++) {
     int x=0;
     int y=512-(5*row);
@@ -117,6 +133,17 @@ public void draw() {
       y=ty;
     }
   }
+  
+    if (bExportSVG){
+    println("finished export");
+    
+    // P3D needs end Raw
+    //endRaw();
+    endRecord();
+    bExportSVG = false;
+  }
+  
+  
   updatePixels();
    
   // pan according to mouse position
@@ -156,4 +183,10 @@ void plotLine(int x0, int y0, int x1, int y1)
     if (e2 >= dy) { err += dy; x0 += sx; } /* e_xy+e_x > 0 */
     if (e2 <= dx) { err += dx; y0 += sy; } /* e_xy+e_y < 0 */
   }
+}
+
+
+String timestamp() {
+  Calendar now = Calendar.getInstance();
+  return String.format("%1$ty%1$tm%1$td_%1$tH%1$tM%1$tS", now);
 }

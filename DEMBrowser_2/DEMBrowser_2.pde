@@ -25,9 +25,9 @@ float space = 5.0;
 PGraphics pg;
 
 void setup(){
- cam = new PeasyCam(this, 100);
-  cam.setMinimumDistance(50);
-  cam.setMaximumDistance(500);
+ //cam = new PeasyCam(this, 100);
+ // cam.setMinimumDistance(50);
+ // cam.setMaximumDistance(500);
   size(600,600,P3D);
   cols = w/scale;
   rows = h/scale;
@@ -89,9 +89,9 @@ void draw(){
 
 
 void meshDraw(){
-  //camera(mouseX*2, mouseY*2, (height/2) / tan(PI/6), // eyeX, eyeY, eyeZ 
-  //      width/2, height/2, 0, // centerX, centerY, centerZ 
-  //      0, 1, 0);  // upX, upY, upZ
+  camera(mouseX*2, mouseY*2, (height/2) / tan(PI/6), // eyeX, eyeY, eyeZ 
+        width/2, height/2, 0, // centerX, centerY, centerZ 
+        0, 1, 0);  // upX, upY, upZ
   translate(width/2, height/2);
   rotateX(PI/rotate_x_denom);
   translate(-w/2, -h/2);
@@ -132,8 +132,7 @@ void meshDraw(){
     ////end curvevertex
   
 
-  if (bExportSVG)
-  {
+  if (bExportSVG){
     println("finished export");
     
     // P3D needs end Raw
@@ -144,14 +143,12 @@ void meshDraw(){
 }
 
 
-String timestamp() 
-{
+String timestamp() {
   Calendar now = Calendar.getInstance();
   return String.format("%1$ty%1$tm%1$td_%1$tH%1$tM%1$tS", now);
 }
 
-void keyPressed()
-{
+void keyPressed(){
   if (key == 'e')
   {
     bExportSVG = true;
