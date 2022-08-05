@@ -110,8 +110,7 @@ public void draw() {
   resetArray();
   animateCurve();
   loadPixels();
-  if (bExportSVG)
-  {
+  if (bExportSVG){
     println("begining export");
     // P3D needs begin Raw
     //beginRaw(SVG, "data/exports/export_"+timestamp()+".svg");
