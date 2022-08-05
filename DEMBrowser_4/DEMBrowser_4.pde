@@ -32,6 +32,10 @@ float V_SCALE=1.0;
 boolean hatch=false;
 
 boolean bExportSVG = false;
+boolean green = false;
+boolean purple = false;
+boolean red = false;
+
  
 public void setup() {
   size(1024,512);
@@ -46,6 +50,9 @@ public void setup() {
 public void keyPressed() {
   if (key=='h' || key=='H') hatch=!hatch;
   if (key == 'e') bExportSVG = true;
+  if (key == 'g') green = !green;
+  if (key == 'p') purple = !purple;
+  if (key == 'r') red = !red;
 }
  
 public void resetArray() {
@@ -138,16 +145,25 @@ public void draw() {
           stroke(0);
           line(x, lineVertices[col][row], x2, lineVertices[col+1][row]);
         } 
-        //else if(lineVertices[col][row] < 500 && lineVertices[col][row] > 20 && intersects[col+1][row] > 0 && intersects[col+1][row] < 500) {
-        else if(lineVertices[col][row] > 0 && intersects[col+1][row] > 0) {          
-          stroke(255,0,255);
-          line(x, lineVertices[col][row], x2,intersects[col+1][row]);
-        }         
-        else if(lineVertices[col][row] > 0 && intersects[col-1][row] > 0) {          
+        else if( intersects[col][row] > 0 && lineVertices[col+1][row] >= 0 ) {
+         if(green){     
           stroke(0, 255, 0);
-          line(x, lineVertices[col][row], x2,intersects[col-1][row]);
+          line(x, intersects[col][row], x2, lineVertices[col+1][row]);
+         }
+        }        
+        else if(lineVertices[col][row] >= 0 && intersects[col+1][row] > 0) {
+          if(purple){
+            stroke(255,0,255);
+            line(x, lineVertices[col][row], x2,intersects[col+1][row]);
+          }
         }
-      }
+        else if( intersects[col][row] > 0 && intersects[col+1][row] > 0 ) {
+         if(red){     
+          stroke(255, 0, 0);
+          line(x, intersects[col][row], x2, intersects[col+1][row]);
+         }
+        }        
+      } // end col loop
     }
     
 
@@ -161,7 +177,7 @@ public void draw() {
     bExportSVG = false;
   }
  
-  mousePosition();
+  //mousePosition();
 }
 
 void mousePosition(){
@@ -214,6 +230,8 @@ void plotLineVertices(int row, int col, int x0, int y0, int x1, int y1){
   int err = dx+dy, e2; /* error value e_xy */
   
   for(;;){  /* loop */
+    
+    if(y0 > miny[x0]) intersects[col][row] = miny[x0];
     if(y0 == miny[x0]) intersects[col][row] = y0;
     if (y0<miny[x0]) {
       if (y0<0 || y0>512) break;
