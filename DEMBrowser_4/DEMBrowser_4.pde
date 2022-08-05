@@ -18,6 +18,7 @@ public float[][] elev;
 int[][] elevation; // elevations in meters
 float[][] felevation; // scaled to range [0,1] where 1=max
 int[][] lineVertices;
+int[][] intersects;
 int maxheight;
  
 // position in the DEM
@@ -35,50 +36,10 @@ boolean bExportSVG = false;
 public void setup() {
   size(1024,512);
   lineVertices = new int[512][512];
-  resetLineVertices();
-  resetArray();
+  intersects = new int[512][512];
+  resetArrays();
   loadDEM();
   //noLoop();
-}
- 
-public void loadDEM() {
-  // read srtm binary file
-  elevation=new int[1201][1201];
-  felevation=new float[1201][1201];
-  
-  byte b[] = loadBytes("N22W106.hgt"); // sample data - scottish borders, with edinburgh near top-right corner
-  //byte b[] = loadBytes("brooklyn_maybe.hgt");
-  int ix=0;
-  maxheight=0;
-  for (int row=0;row<1201;row++) {
-    for (int col=0;col<1201;col++) {
-      // bytes are signed, from -128 to 127, converts to unsigned...
-      int hi = b[ix] & 0xff;
-      int lo = b[ix+1] & 0xff;
-      int el=(int)((hi<<8)|lo); // big endian!
-      //if (el==32768) {
-      if (el > 32000) {
-        //TODO - handle voids (missing satellite data)
-        //probably average the neighbours in a second pass?
-        if(col > 0){
-          elevation[row][col]= elevation[row][col -1 ];
-        } else {
-          elevation[row][col]=el;
-        }
-      } else {
-        elevation[row][col]=el;
-      }
-      if (el>maxheight && el<32000) maxheight=el;
-      ix+=2;
-    }
-  }
-  // work out scaled values
-  for (int row=0;row<1201;row++) {
-    for (int col=0;col<1201;col++) {
-      felevation[col][row]=255.0*(float)elevation[col][row]/(float)maxheight;
-    }
-  }
-  print ("Loaded DEM");
 }
  
  
@@ -89,16 +50,18 @@ public void keyPressed() {
  
 public void resetArray() {
   // reset y-buffer used for 'hidden hidden removal'
-  miny=new int[512];
-  for (int i=0;i<512;i++) miny[i]=512;
+
 }
 
-public void resetLineVertices(){
+public void resetArrays(){
   for (int row = 0; row < 512; row++) {
    for (int col = 0; col < 512; col++) {
       lineVertices[row][col] = -1;
+      intersects[row][col] = -1;
    }
   }
+  miny=new int[512];
+  for (int i=0;i<512;i++) miny[i]=512;
 }
  
 public void animateCurve() {
@@ -120,8 +83,7 @@ public void animateCurve() {
 public void draw() {
   background(255);
   stroke(0);
-  resetArray();
-  resetLineVertices();
+  resetArrays();
   animateCurve();
 
   if (bExportSVG){
@@ -137,7 +99,7 @@ public void draw() {
     newPlotLineVertices();      
 
     boolean inShape = false;
-    for (int row=0;row<512;row++) {      
+    for (int row=511;row>=0;row--) {      
       //beginShape();        
       //boolean inShape = true;
       noFill();
@@ -175,37 +137,21 @@ public void draw() {
         if(lineVertices[col][row] >= 0 && lineVertices[col+1][row] >= 0){
           stroke(0);
           line(x, lineVertices[col][row], x2, lineVertices[col+1][row]);
+        } 
+        //else if(lineVertices[col][row] < 500 && lineVertices[col][row] > 20 && intersects[col+1][row] > 0 && intersects[col+1][row] < 500) {
+        else if(lineVertices[col][row] > 0 && intersects[col+1][row] > 0) {          
+          stroke(255,0,255);
+          line(x, lineVertices[col][row], x2,intersects[col+1][row]);
+        }         
+        else if(lineVertices[col][row] > 0 && intersects[col-1][row] > 0) {          
+          stroke(0, 255, 0);
+          line(x, lineVertices[col][row], x2,intersects[col-1][row]);
         }
       }
     }
     
 
-    //for (int col=0;col<512;col++) {      
-    //  beginShape();        
-    //  noFill();
-    //   for (int row=0;row<512;row++) {
-    //    if(lineVertices[row][col] >= 0){
-    //      int x = row * 10;
-    //      curveVertex(x, lineVertices[row][col]);
-    //    }
-    //  }
-    //  endShape();
-    //}
-    
-  
-  
-  
-  //  for (int row=0;row<512;row++) {       
-  //   for (int col=0;col<512;col++) { 
-  //    if(lineVertices[row][col] > -1){
-  //      //point(row, col);
-  //      int x = row * 10;         
-  //      point(x,lineVertices[row][col]);
-  //      //println("x,y, val :",row,col, lineVertices[row][col]);
-  //    } 
-  //  }     
-  //}
-  
+
   
   if (bExportSVG){
     println("finished export");
@@ -268,6 +214,7 @@ void plotLineVertices(int row, int col, int x0, int y0, int x1, int y1){
   int err = dx+dy, e2; /* error value e_xy */
   
   for(;;){  /* loop */
+    if(y0 == miny[x0]) intersects[col][row] = y0;
     if (y0<miny[x0]) {
       if (y0<0 || y0>512) break;
       lineVertices[col][row] = y0;
@@ -296,48 +243,64 @@ void printArray(int[][] arrayint){
 }
 
 
-void oldPlotLines(){
-    for (int row=0;row<79;row++) {
-    int x=0;
-    int y=512-(5*row);
-    for (int col=2;col<49;col++) {
-      x=10*col;
-      int tx=x+10;
-      int ty=y;
-      plotLine(x,y-(int)elev[col][row],tx,ty-(int)elev[col+1][row]);
-      // plotLineVertices(x,y-(int)elev[col][row],tx,ty-(int)elev[col+1][row]);
-      // optional crosshatch..
-      if (hatch) plotLine(x,y-(int)elev[col][row],tx,ty-5-(int)elev[col+1][row+1]);
-      x=tx;
-      y=ty;
-    }
-  }
-}
-
-
-
-
-void plotLine(int x0, int y0, int x1, int y1){
-  // modified bresenham algorithm
-  // lines are drawn from frontmost to backmost, and a point is only shown IF
-  // its y coordinate is closer to the top of the screen than any pixel drawn in this column.
-  // This implements a very simpleform of hidden line removal.
-  // Based on algorithm at
-  // http://free.pages.at/easyfilter/bresenham.html
- 
-  int dx =  abs(x1-x0), sx = x0<x1 ? 1 : -1;
-  int dy = -abs(y1-y0), sy = y0<y1 ? 1 : -1;
-  int err = dx+dy, e2; /* error value e_xy */
+public void loadDEM() {
+  // read srtm binary file
+  elevation=new int[1201][1201];
+  felevation=new float[1201][1201];
   
-  for(;;){  /* loop */
-    if (y0<miny[x0]) {
-      if (y0<0 || y0>512) break;
-      pixels[y0*512+x0]=0xFFFFFFFF ; // set pixel to white opaque
-      miny[x0]=y0;
+  byte b[] = loadBytes("N22W106.hgt"); // sample data - scottish borders, with edinburgh near top-right corner
+  //byte b[] = loadBytes("brooklyn_maybe.hgt");
+  int ix=0;
+  maxheight=0;
+  for (int row=0;row<1201;row++) {
+    for (int col=0;col<1201;col++) {
+      // bytes are signed, from -128 to 127, converts to unsigned...
+      int hi = b[ix] & 0xff;
+      int lo = b[ix+1] & 0xff;
+      int el=(int)((hi<<8)|lo); // big endian!
+      //if (el==32768) {
+      if (el > 32000) {
+        //TODO - handle voids (missing satellite data)
+        //probably average the neighbours in a second pass?
+        if(col > 0){
+          elevation[row][col]= elevation[row][col -1 ];
+        } else {
+          elevation[row][col]=el;
+        }
+      } else {
+        elevation[row][col]=el;
+      }
+      if (el>maxheight && el<32000) maxheight=el;
+      ix+=2;
     }
-    if (x0==x1 && y0==y1) break;
-    e2 = 2*err;
-    if (e2 >= dy) { err += dy; x0 += sx; } /* e_xy+e_x > 0 */
-    if (e2 <= dx) { err += dx; y0 += sy; } /* e_xy+e_y < 0 */
   }
+  // work out scaled values
+  for (int row=0;row<1201;row++) {
+    for (int col=0;col<1201;col++) {
+      felevation[col][row]=255.0*(float)elevation[col][row]/(float)maxheight;
+    }
+  }
+  print ("Loaded DEM");
 }
+
+
+//boolean lineIntersect(float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4) {
+
+//  // calculate the distance to intersection point
+//  float uA = ((x4-x3)*(y1-y3) - (y4-y3)*(x1-x3)) / ((y4-y3)*(x2-x1) - (x4-x3)*(y2-y1));
+//  float uB = ((x2-x1)*(y1-y3) - (y2-y1)*(x1-x3)) / ((y4-y3)*(x2-x1) - (x4-x3)*(y2-y1));
+
+//  // if uA and uB are between 0-1, lines are colliding
+//  if (uA >= 0 && uA <= 1 && uB >= 0 && uB <= 1) {
+
+//    // optionally, draw a circle where the lines meet
+//    float intersectionX = x1 + (uA * (x2-x1));
+//    float intersectionY = y1 + (uA * (y2-y1));
+//    fill(255,0,0);
+//    noStroke();
+//    ellipse(intersectionX,intersectionY, 20,20);
+
+//    return true;
+//  }
+//  return false;
+//}
