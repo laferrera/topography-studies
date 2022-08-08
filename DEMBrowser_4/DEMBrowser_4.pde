@@ -19,6 +19,7 @@ int[][] elevation; // elevations in meters
 float[][] felevation; // scaled to range [0,1] where 1=max
 int[][] lineVertices;
 int[][] intersects;
+int[][][] lineEndpoints;
 int maxheight;
  
 // position in the DEM
@@ -32,15 +33,16 @@ float V_SCALE=1.0;
 boolean hatch=false;
 
 boolean bExportSVG = false;
-boolean green = false;
-boolean purple = false;
-boolean red = false;
+boolean green = true;
+boolean purple = true;
+boolean red = true;
 
  
 public void setup() {
   size(1024,512);
   lineVertices = new int[512][512];
   intersects = new int[512][512];
+  lineEndpoints = new int[512][512][512];
   resetArrays();
   loadDEM();
   //noLoop();
@@ -55,10 +57,6 @@ public void keyPressed() {
   if (key == 'r') red = !red;
 }
  
-public void resetArray() {
-  // reset y-buffer used for 'hidden hidden removal'
-
-}
 
 public void resetArrays(){
   for (int row = 0; row < 512; row++) {
@@ -68,6 +66,7 @@ public void resetArrays(){
    }
   }
   miny=new int[512];
+  //lineEndpoints = new int[512][512][512];
   for (int i=0;i<512;i++) miny[i]=512;
 }
  
@@ -92,6 +91,7 @@ public void draw() {
   stroke(0);
   resetArrays();
   animateCurve();
+  plotLineVertices();
 
   if (bExportSVG){
     println("begining export");
@@ -99,36 +99,76 @@ public void draw() {
     //beginRaw(SVG, "data/exports/export_"+timestamp()+".svg");
     beginRecord(SVG, "data/exports/export_"+timestamp()+".svg");
   }
-    
-  //loadPixels();  
-  //oldPlotLines();
-  //updatePixels();
-    newPlotLineVertices();      
+      
 
-    boolean inShape = false;
-    for (int row=511;row>=0;row--) {      
-      //beginShape();        
-      //boolean inShape = true;
-      noFill();
-       for (int col=0;col<512;col++) {
-        int x = col * 10;         
-        if(lineVertices[col][row] >= 0){
-          if(!inShape){
-            beginShape();        
-            inShape = true;
-          }
-          curveVertex(x, lineVertices[col][row]);
-        } else {
-          if(inShape){
-            //curveVertex(x, col);
-            //if(row > 0) curveVertex(x, lineVertices[col][row-1]);
-            endShape();        
-            inShape = false;
-          }      
-        }
-      }
-      if(inShape) endShape();
-    }
+    
+  //for (int row=0;row<512;row++) {
+  //  beginShape();        
+  //  boolean inShape = true;
+  //  boolean drewLine = false;
+  //  noFill();
+  //  int col=0;
+  //  while (col<509) {
+  //    int x = col * 10;    
+  //    int x2 = (col + 1) * 10;
+  //    int x3 = (col + 2) * 10;                  
+  //    //if(lineVertices[col][row] >= 0 && lineVertices[col+1][row] >= 0){
+  //    if(lineVertices[col][row] >= 0 && lineVertices[col+1][row] >= 0 && lineVertices[col+2][row] >= 0){          
+  //      if(!inShape){
+  //        stroke(0);
+  //        beginShape();        
+  //        inShape = true;
+  //      }
+  //      drewLine = true;          
+  //      curveVertex(x, lineVertices[col][row]);
+  //      curveVertex(x2, lineVertices[col+1][row]);
+  //      curveVertex(x3, lineVertices[col+2][row]);
+  //      col = col + 3;
+  //    } else {
+  //      if(inShape){
+  //        //curveVertex(x, col);
+  //        //if(row > 0) curveVertex(x, lineVertices[col][row-1]);
+  //        endShape();        
+  //        inShape = false;
+  //      }
+  //      col = col + 1;
+  //      drewLine = false;
+  //    }
+        
+        
+  //    if(!drewLine){
+  //      if(lineVertices[col][row] >= 0 && lineVertices[col+1][row] >= 0){
+  //        stroke(0);
+  //        line(x, lineVertices[col][row], x2, lineVertices[col+1][row]);
+  //      } 
+  //      else if(intersects[col][row] > 0 && lineVertices[col+1][row] >= 0 ) {
+  //       if(green){     
+  //        stroke(0, 255, 0);
+  //        line(x, intersects[col][row], x2, lineVertices[col+1][row]);
+  //       }
+  //      }
+  //      else if(lineVertices[col][row] >= 0 && intersects[col+1][row] > 0) {
+  //        if(purple){
+  //          stroke(255,0,255);
+  //          line(x, lineVertices[col][row], x2,intersects[col+1][row]);
+  //        }
+  //      } 
+  //      else if(intersects[col][row] > 0 && intersects[col+1][row] > 0 ) {
+  //       if(red){     
+  //        stroke(255, 0, 0);
+  //        line(x, intersects[col][row], x2, intersects[col+1][row]);
+  //       }
+  //      }            
+  //    }
+        
+        
+  
+  //    }
+  //  }
+    
+    
+    
+    
     
     
     
@@ -136,31 +176,42 @@ public void draw() {
 
     for (int row=0;row<512;row++) {      
       noFill();
-       for (int col=0;col<511;col++) {
-        int x = 512+ col * 10;
-        int x2 = 512 + (col + 1) * 10;         
-        //int x = col;
-        //int x2 = (col + 1);        
+       for (int col=0;col<510;col++) {
+        //int x = 512+ col * 10;
+        //int x2 = 512 + (col + 1) * 10;                 
+        int x = col * 10;
+        int x2 = (col + 1) * 10;        
         if(lineVertices[col][row] >= 0 && lineVertices[col+1][row] >= 0){
           stroke(0);
           line(x, lineVertices[col][row], x2, lineVertices[col+1][row]);
+          //lineEndpoints[x][lineVertices[col][row]][x2] = lineVertices[col+1][row];
         } 
         else if( intersects[col][row] > 0 && lineVertices[col+1][row] >= 0 ) {
          if(green){     
-          stroke(0, 255, 0);
-          line(x, intersects[col][row], x2, lineVertices[col+1][row]);
+          //if(lineEndpoints[x][intersects[col][row]][x2] != lineVertices[col+1][row]){
+            stroke(0, 255, 0);
+            line(x, intersects[col][row], x2, lineVertices[col+1][row]);
+            lineEndpoints[x][intersects[col][row]][x2] = lineVertices[col+1][row];
+          //}
+          
          }
         }        
         else if(lineVertices[col][row] >= 0 && intersects[col+1][row] > 0) {
           if(purple){
-            stroke(255,0,255);
-            line(x, lineVertices[col][row], x2,intersects[col+1][row]);
+            //if(lineEndpoints[x][lineVertices[col][row]][x2] != intersects[col+1][row]){
+              stroke(255,0,255);
+              lineEndpoints[x][lineVertices[col][row]][x2] = intersects[col+1][row];
+              line(x, lineVertices[col][row], x2,intersects[col+1][row]);
+            //}
           }
         }
         else if( intersects[col][row] > 0 && intersects[col+1][row] > 0 ) {
          if(red){     
-          stroke(255, 0, 0);
-          line(x, intersects[col][row], x2, intersects[col+1][row]);
+          //if(lineEndpoints[x][intersects[col][row]][x2] != intersects[col+1][row]){
+            stroke(255, 0, 0);
+            lineEndpoints[x][intersects[col][row]][x2] = intersects[col+1][row];
+            line(x, intersects[col][row], x2, intersects[col+1][row]);
+          //}
          }
         }        
       } // end col loop
@@ -177,37 +228,39 @@ public void draw() {
     bExportSVG = false;
   }
  
-  //mousePosition();
+  mousePosition();
 }
 
 void mousePosition(){
     // pan according to mouse position
-   offsetx=offsetx+((mouseX-256)/64);
-   offsety=offsety+((mouseY-256)/64);
-   offsetx=offsetx + 1;
-   offsety=offsety + 1;
- 
-  // prevent going off the model edges
-  if (offsetx>1201-50) offsetx=1201-50;
-  if (offsetx<0) offsetx=0;
-  if (offsety>1201-80) offsety=1201-80;
-  if (offsety<80) offsety=80;
+   if (mousePressed == true) {  
+     offsetx=offsetx+((mouseX-256)/64);
+     offsety=offsety+((mouseY-256)/64);
+     offsetx=offsetx + 1;
+     offsety=offsety + 1;
+   
+    // prevent going off the model edges
+    if (offsetx>1201-50) offsetx=1201-50;
+    if (offsetx<0) offsetx=0;
+    if (offsety>1201-80) offsety=1201-80;
+    if (offsety<80) offsety=80; 
+  }
 }
 
-void newPlotLineVertices(){
+void plotLineVertices(){
   //79 rows / 49 cols
     for (int col=3;col<49;col++) {  
     //for (int row=0;row<79;row++) {
     int x=0;
     //for (int col=2;col<49;col++) {
     for (int row=0;row<79;row++) {
-      int y=512-(5*row);
+      int y=511-(5*row);
       //x=10*col;
       x=col;
       int tx=x+10;
       int ty=y;
       //plotLine(x,y-(int)elev[col][row],tx,ty-(int)elev[col+1][row]);
-       plotLineVertices(row,col,x,y-(int)elev[col][row],tx,ty-(int)elev[col+1][row]);
+       bresenhamVertices(row,col,x,y-(int)elev[col][row],tx,ty-(int)elev[col+1][row]);
       // optional crosshatch..
       //if (hatch) plotLine(x,y-(int)elev[col][row],tx,ty-5-(int)elev[col+1][row+1]);
       x=tx;
@@ -217,7 +270,7 @@ void newPlotLineVertices(){
 }
 
 
-void plotLineVertices(int row, int col, int x0, int y0, int x1, int y1){
+void bresenhamVertices(int row, int col, int x0, int y0, int x1, int y1){
   // modified bresenham algorithm
   // lines are drawn from frontmost to backmost, and a point is only shown IF
   // its y coordinate is closer to the top of the screen than any pixel drawn in this column.
@@ -231,10 +284,10 @@ void plotLineVertices(int row, int col, int x0, int y0, int x1, int y1){
   
   for(;;){  /* loop */
     
-    if(y0 > miny[x0]) intersects[col][row] = miny[x0];
+    //if(y0 > miny[x0]) intersects[col][row] = y0;
     if(y0 == miny[x0]) intersects[col][row] = y0;
     if (y0<miny[x0]) {
-      if (y0<0 || y0>512) break;
+      if (y0<0 || y0>511) break;
       lineVertices[col][row] = y0;
       miny[x0]=y0;
     }
