@@ -17,6 +17,8 @@ import ch.bildspur.postfx.*;
  
  import drop.*;
  
+ import controlP5.*;
+ 
 public int[] miny;
 public float[][] elev;
  
@@ -38,11 +40,13 @@ float V_SCALE=1.0;
 boolean hatch=false;
 
 boolean bExportSVG = false;
+boolean exporting = false;
 boolean green = true;
 boolean purple = true;
 boolean red = true;
-SDrop drop;
 
+ControlFrame cf;
+SDrop drop;
 PostFX fx;
 
 color bgColor = 0;
@@ -51,13 +55,16 @@ int hueColor = 0;
 int colorCycleFrameCount = 0;
 int drawRow = 0;
 
-//String filepath = "N22W106.hgt";
-//String filepath = "brooklyn_maybe.hgt";
-String filepath = "richmond.hgt";
+String filepath = "N22W106.hgt";
+float xspace = 1;
+float yspace = 1;
+
+
  
 public void setup() {
 
   size(1024,512);
+  surface.setLocation(10, 250);
   colorMode(HSB, 360, 100, 100);
   lineVertices = new int[512][512];
   intersects = new int[512][512];
@@ -65,10 +72,8 @@ public void setup() {
   resetArrays();
   loadDEM();
   //fx = new PostFX(this);
-  String[] args = {"SecondApplet"};
-  SecondApplet secondApp = new SecondApplet();
-  PApplet.runSketch(args, secondApp);
-  drop = new SDrop(secondApp);
+  cf = new ControlFrame(this, 200, 200, "Controls");
+  drop = new SDrop(cf);
 }
  
  
@@ -108,6 +113,10 @@ public void animateCurve() {
     }
   }
 }
+
+public void exportSVG(){
+  bExportSVG = true;
+}
  
 public void draw() {
   background(bgColor);
@@ -118,6 +127,7 @@ public void draw() {
 
   if (bExportSVG){
     println("begining export");
+    exporting = true;
     // P3D needs begin Raw
     //beginRaw(SVG, "data/exports/export_"+timestamp()+".svg");
     beginRecord(SVG, "data/exports/export_"+timestamp()+".svg");
@@ -248,23 +258,15 @@ public void draw() {
         }        
       } // end col loop
     } // end row
-    //drawRow++;    
-    //if(drawRow > 255){
-    //  drawRow = 0;
-    //  background(bgColor);
-    //}
-    
+      
   
-    
-
-   
-  
-  if (bExportSVG){
+  if (bExportSVG && exporting){
     println("finished export");
     // P3D needs end Raw
     //endRaw();
     endRecord();
     bExportSVG = false;
+    exporting = false;
   }
  
  
@@ -403,7 +405,7 @@ public void loadDEM() {
       felevation[col][row]=255.0*(float)elevation[col][row]/(float)maxheight;
     }
   }
-  print ("Loaded DEM");
+  println("Loaded DEM");
 }
 
 
@@ -428,16 +430,47 @@ public void loadDEM() {
 //  return false;
 //}
 
-public class SecondApplet extends PApplet {
+
+class ControlFrame extends PApplet {
+
+  int w, h;
+  PApplet parent;
+  ControlP5 cp5;
+
+  public ControlFrame(PApplet _parent, int _w, int _h, String _name) {
+    super();   
+    parent = _parent;
+    w=_w;
+    h=_h;
+    PApplet.runSketch(new String[]{this.getClass().getName()}, this);
+  }
 
   public void settings() {
-    size(100, 100);
-    //drop = new SDrop(this);
+    size(w, h);
   }
-  public void draw() {
-    background(255);
+
+  public void setup() {
+    surface.setLocation(10, 10);
+    cp5 = new ControlP5(this);
+       
+    cp5.addSlider("xspace")
+       .plugTo(parent, "xspace")
+       .setRange(0, 0.1)
+       .setValue(0.01)
+       .setPosition(20, 10)
+       .setSize(100, 10);
+       
+    cp5.addButton("exportSVG")
+       .plugTo(parent, "exportSVG")
+       .setValue(0)
+       .setPosition(75,125)
+       .setSize(50,50);       
+       
   }
-  
+
+  void gui() {
+    cp5.draw();
+  }
   
   void dropEvent(DropEvent theDropEvent) {
     // docs
@@ -446,9 +479,11 @@ public class SecondApplet extends PApplet {
     if(theDropEvent.isFile()){
       filepath = theDropEvent.filePath();
       println("file()\t"+theDropEvent.filePath());
-
       loadDEM();
     }
   }
-  
+
+  void draw() {
+    background(190);
+  }
 }
