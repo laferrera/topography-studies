@@ -15,6 +15,7 @@ import ch.bildspur.postfx.builder.*;
 import ch.bildspur.postfx.pass.*;
 import ch.bildspur.postfx.*;
  
+ import drop.*;
  
 public int[] miny;
 public float[][] elev;
@@ -40,26 +41,34 @@ boolean bExportSVG = false;
 boolean green = true;
 boolean purple = true;
 boolean red = true;
+SDrop drop;
+
 PostFX fx;
 
-color bgColor = 255;
-color lineColor = 0;
+color bgColor = 0;
+color lineColor = 255;
 int hueColor = 0;
+int colorCycleFrameCount = 0;
 int drawRow = 0;
 
-//String filename = "N22W106.hgt";
-//String filename = "brooklyn_maybe.hgt";
-String filename = "richmond.hgt";
+//String filepath = "N22W106.hgt";
+//String filepath = "brooklyn_maybe.hgt";
+String filepath = "richmond.hgt";
  
 public void setup() {
-  size(1024,512,P3D);
+
+  size(1024,512);
+  colorMode(HSB, 360, 100, 100);
   lineVertices = new int[512][512];
   intersects = new int[512][512];
   lineEndpoints = new int[512][512][512];
   resetArrays();
   loadDEM();
-  fx = new PostFX(this);  
-
+  //fx = new PostFX(this);
+  String[] args = {"SecondApplet"};
+  SecondApplet secondApp = new SecondApplet();
+  PApplet.runSketch(args, secondApp);
+  drop = new SDrop(secondApp);
 }
  
  
@@ -114,7 +123,7 @@ public void draw() {
     beginRecord(SVG, "data/exports/export_"+timestamp()+".svg");
   }
       
-  pushMatrix();
+
 
     
   //for (int row=0;row<512;row++) {
@@ -194,10 +203,17 @@ public void draw() {
         //int x = 512+ col * 10;
         //int x2 = 512 + (col + 1) * 10;                 
         int x = col * 10;
-        int x2 = (col + 1) * 10;
+        int x2 = (col + 1) * 10;        
 
         if(lineVertices[col][row] >= 0 && lineVertices[col+1][row] >= 0){
-          stroke(lineColor);
+          //stroke(lineColor);
+      
+          if(frameCount - colorCycleFrameCount > 2) {
+            colorCycleFrameCount = frameCount;
+            hueColor += 10;
+          }
+          int thisHueColor = (hueColor + row + lineVertices[col][row])%360;                
+          stroke(thisHueColor,20,100);
 
           line(x, lineVertices[col][row], x2, lineVertices[col+1][row]);
           //lineEndpoints[x][lineVertices[col][row]][x2] = lineVertices[col+1][row];
@@ -241,9 +257,7 @@ public void draw() {
   
     
 
-    
-
- popMatrix();
+   
   
   if (bExportSVG){
     println("finished export");
@@ -253,9 +267,13 @@ public void draw() {
     bExportSVG = false;
   }
  
+ 
+ // docs 
+ // https://github.com/cansik/processing-postfx
  //fx.render()
- //   .bloom(0.5, 100, 100)
- //   .blur(2, 2)
+ //   //.blur(10, 10)
+ //   //.bloom(0.5, 100, 100)
+ //   //.chromaticAberration()
  //   .compose();
  
  
@@ -346,11 +364,14 @@ void printArray(int[][] arrayint){
 
 
 public void loadDEM() {
+  // some hgt files can be found here:
+  // http://viewfinderpanoramas.org/dem3.html
+  // http://viewfinderpanoramas.org/Coverage%20map%20viewfinderpanoramas_org3.htm
   // read srtm binary file
   elevation=new int[1201][1201];
   felevation=new float[1201][1201];
   
-  byte b[] = loadBytes(filename); // sample data - scottish borders, with edinburgh near top-right corner
+  byte b[] = loadBytes(filepath); // sample data - scottish borders, with edinburgh near top-right corner
   //byte b[] = loadBytes("brooklyn_maybe.hgt");
   int ix=0;
   maxheight=0;
@@ -406,3 +427,28 @@ public void loadDEM() {
 //  }
 //  return false;
 //}
+
+public class SecondApplet extends PApplet {
+
+  public void settings() {
+    size(100, 100);
+    //drop = new SDrop(this);
+  }
+  public void draw() {
+    background(255);
+  }
+  
+  
+  void dropEvent(DropEvent theDropEvent) {
+    // docs
+    // https://transfluxus.github.io/drop/
+    println("dropTargetDropEvent()\t"+theDropEvent.dropTargetDropEvent());
+    if(theDropEvent.isFile()){
+      filepath = theDropEvent.filePath();
+      println("file()\t"+theDropEvent.filePath());
+
+      loadDEM();
+    }
+  }
+  
+}
