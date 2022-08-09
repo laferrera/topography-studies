@@ -29,8 +29,9 @@ float V_SCALE=1.0;
  
 // optional cross-hatching
 boolean hatch=false;
-
 boolean bExportSVG = false;
+int drawRow = 0;
+
  
 public void setup() {
   size(1024,512);

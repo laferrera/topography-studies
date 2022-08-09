@@ -11,6 +11,10 @@
 import processing.svg.*;
 import java.util.*;
  
+import ch.bildspur.postfx.builder.*;
+import ch.bildspur.postfx.pass.*;
+import ch.bildspur.postfx.*;
+ 
  
 public int[] miny;
 public float[][] elev;
@@ -36,16 +40,26 @@ boolean bExportSVG = false;
 boolean green = true;
 boolean purple = true;
 boolean red = true;
+PostFX fx;
 
+color bgColor = 255;
+color lineColor = 0;
+int hueColor = 0;
+int drawRow = 0;
+
+//String filename = "N22W106.hgt";
+//String filename = "brooklyn_maybe.hgt";
+String filename = "richmond.hgt";
  
 public void setup() {
-  size(1024,512);
+  size(1024,512,P3D);
   lineVertices = new int[512][512];
   intersects = new int[512][512];
   lineEndpoints = new int[512][512][512];
   resetArrays();
   loadDEM();
-  //noLoop();
+  fx = new PostFX(this);  
+
 }
  
  
@@ -87,8 +101,8 @@ public void animateCurve() {
 }
  
 public void draw() {
-  background(255);
-  stroke(0);
+  background(bgColor);
+  stroke(lineColor);
   resetArrays();
   animateCurve();
   plotLineVertices();
@@ -100,6 +114,7 @@ public void draw() {
     beginRecord(SVG, "data/exports/export_"+timestamp()+".svg");
   }
       
+  pushMatrix();
 
     
   //for (int row=0;row<512;row++) {
@@ -168,21 +183,22 @@ public void draw() {
     
     
     
-    
-    
-    
-    
+   
     
 
-    for (int row=0;row<512;row++) {      
-      noFill();
+
+    for (int row=0;row<512;row++) {
+      //int row = drawRow;
+      noFill();      
        for (int col=0;col<510;col++) {
         //int x = 512+ col * 10;
         //int x2 = 512 + (col + 1) * 10;                 
         int x = col * 10;
-        int x2 = (col + 1) * 10;        
+        int x2 = (col + 1) * 10;
+
         if(lineVertices[col][row] >= 0 && lineVertices[col+1][row] >= 0){
-          stroke(0);
+          stroke(lineColor);
+
           line(x, lineVertices[col][row], x2, lineVertices[col+1][row]);
           //lineEndpoints[x][lineVertices[col][row]][x2] = lineVertices[col+1][row];
         } 
@@ -215,10 +231,19 @@ public void draw() {
          }
         }        
       } // end col loop
-    }
+    } // end row
+    //drawRow++;    
+    //if(drawRow > 255){
+    //  drawRow = 0;
+    //  background(bgColor);
+    //}
+    
+  
     
 
+    
 
+ popMatrix();
   
   if (bExportSVG){
     println("finished export");
@@ -227,6 +252,12 @@ public void draw() {
     endRecord();
     bExportSVG = false;
   }
+ 
+ //fx.render()
+ //   .bloom(0.5, 100, 100)
+ //   .blur(2, 2)
+ //   .compose();
+ 
  
   mousePosition();
 }
@@ -319,7 +350,7 @@ public void loadDEM() {
   elevation=new int[1201][1201];
   felevation=new float[1201][1201];
   
-  byte b[] = loadBytes("N22W106.hgt"); // sample data - scottish borders, with edinburgh near top-right corner
+  byte b[] = loadBytes(filename); // sample data - scottish borders, with edinburgh near top-right corner
   //byte b[] = loadBytes("brooklyn_maybe.hgt");
   int ix=0;
   maxheight=0;
