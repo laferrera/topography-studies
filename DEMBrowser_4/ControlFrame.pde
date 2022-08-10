@@ -3,7 +3,6 @@ class ControlFrame extends PApplet {
   int w, h;
   PApplet parent;
   ControlP5 cp5;
-  CallbackListener cb;
 
   public ControlFrame(PApplet _parent, int _w, int _h, String _name) {
     super();   
@@ -28,31 +27,11 @@ class ControlFrame extends PApplet {
        .setPosition(20, 10)
        .setSize(100, 10);
        
-    cp5.addSlider("verticalScale")
-       .plugTo(parent, "verticalScale")
-       .setRange(0.5, 5.0)
-       .setValue(1.0)
-       .setPosition(20, 30)
-       .setSize(100, 10);
-       
-       
     cp5.addButton("exportSVG")
        .plugTo(parent, "exportSVG")
        .setValue(0)
        .setPosition(75,125)
        .setSize(50,50);       
-   
-    cb = new CallbackListener() {
-      public void controlEvent(CallbackEvent theEvent) {
-        switch(theEvent.getAction()) {
-          case(ControlP5.ACTION_BROADCAST): 
-            generatePoints();
-            break;
-        }
-      }
-    };
-    
-    cp5.addCallback(cb);
        
   }
 

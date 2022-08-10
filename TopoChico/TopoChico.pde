@@ -1,23 +1,14 @@
-// DEM viewer demo
-// Steven Kay, 2011
-// allows you to use the mouse to pan over a digital elevation model
-// model is shown using
+// DEM Viewer 
 // uses the SRTM .HGT binary format.
 // DEM from http://srtm.csi.cgiar.org/
-// Move the mouse to an edge or corner to pan in that direction
-// demo uses a one-degree square covering the Scottish borders and Edinburgh
-// you may spot vertical lines - these are "voids" in the data.
- 
-import processing.svg.*;
+
 import java.util.*;
- 
+import processing.svg.*; 
 import ch.bildspur.postfx.builder.*;
 import ch.bildspur.postfx.pass.*;
-import ch.bildspur.postfx.*;
- 
+import ch.bildspur.postfx.*; 
 import drop.*;
 import controlP5.*;
- 
 public int[] miny;
 public float[][] elev;
  
@@ -32,13 +23,8 @@ int maxheight;
 int offsetx=400;
 int offsety=200;
  
-//tweak these according to map
-float V_SCALE=1.0;
- 
-// optional cross-hatching
 boolean hatch=false;
-
-boolean bExportSVG = false;
+boolean beginExportSVG = false;
 boolean exporting = false;
 boolean green = true;
 boolean purple = true;
@@ -48,82 +34,38 @@ ControlFrame cf;
 SDrop drop;
 PostFX fx;
 
-color bgColor = 0;
-color lineColor = 255;
-int hueColor = 0;
-int colorCycleFrameCount = 0;
-int drawRow = 0;
+color bgColor = 255;
+color lineColor = 0;
 
 String filepath = "N22W106.hgt";
+
+// cp5 params
+float verticalScale=1.0;
 float xspace = 1;
 float yspace = 1;
 
+int xRenderOffset = 10;
+int yRenderOffset = 10;
 
  
 public void setup() {
-  size(1024,512);
+  size(640,640);
   surface.setLocation(10, 250);
-  colorMode(HSB, 360, 100, 100);
   lineVertices = new int[512][512];
   intersects = new int[512][512];
   lineEndpoints = new int[512][512][512];
-  resetArrays();
   loadDEM();
+  generatePoints();
   //fx = new PostFX(this);
   cf = new ControlFrame(this, 200, 200, "Controls");
   drop = new SDrop(cf);
 }
- 
- 
-public void keyPressed() {
-  if (key=='h' || key=='H') hatch=!hatch;
-  if (key == 'e') bExportSVG = true;
-  if (key == 'g') green = !green;
-  if (key == 'p') purple = !purple;
-  if (key == 'r') red = !red;
-}
- 
-
-public void resetArrays(){
-  for (int row = 0; row < 512; row++) {
-   for (int col = 0; col < 512; col++) {
-      lineVertices[row][col] = -1;
-      intersects[row][col] = -1;
-   }
-  }
-  miny=new int[512];
-  //lineEndpoints = new int[512][512][512];
-  for (int i=0;i<512;i++) miny[i]=512;
-}
- 
-public void animateCurve() {
-  // load part of the DEM into the elevation buffer for display
-  elev=new float[51][80];
-  for (int x=0;x<51;x++) {
-    for (int y=0;y<80;y++) {
-      int ax=offsetx+x;
-      int ay=offsety-y;
-      if (ax<0) ax=1200;
-      if (ay<0) ay=1200;
-      if (ax>1200) ax=0;
-      if (ay>1200) ay=0;
-      elev[x][y]=V_SCALE*felevation[ay][ax];
-    }
-  }
-}
-
-public void exportSVG(){
-  bExportSVG = true;
-}
- 
+  
 public void draw() {
   background(bgColor);
-  stroke(lineColor);
-  resetArrays();
-  animateCurve();
-  plotLineVertices();
 
-  if (bExportSVG){
+
+  if (beginExportSVG){
     println("begining export");
     exporting = true;
     // P3D needs begin Raw
@@ -131,67 +73,16 @@ public void draw() {
     beginRecord(SVG, "data/exports/export_"+timestamp()+".svg");
   }
 
+  generateLines();
 
-    for (int row=0;row<512;row++) {
-      //int row = drawRow;
-      noFill();      
-       for (int col=0;col<510;col++) {
-        //int x = 512+ col * 10;
-        //int x2 = 512 + (col + 1) * 10;                 
-        int x = col * 10;
-        int x2 = (col + 1) * 10;        
-
-        if(lineVertices[col][row] >= 0 && lineVertices[col+1][row] >= 0){
-          //stroke(lineColor);
-      
-          if(frameCount - colorCycleFrameCount > 2) {
-            colorCycleFrameCount = frameCount;
-            hueColor += 10;
-          }
-          int thisHueColor = (hueColor + row + lineVertices[col][row])%360;                
-          stroke(thisHueColor,20,100);
-
-          line(x, lineVertices[col][row], x2, lineVertices[col+1][row]);
-          //lineEndpoints[x][lineVertices[col][row]][x2] = lineVertices[col+1][row];
-        } 
-        else if( intersects[col][row] > 0 && lineVertices[col+1][row] >= 0 ) {
-         if(green){     
-          //if(lineEndpoints[x][intersects[col][row]][x2] != lineVertices[col+1][row]){
-            stroke(0, 255, 0);
-            line(x, intersects[col][row], x2, lineVertices[col+1][row]);
-            lineEndpoints[x][intersects[col][row]][x2] = lineVertices[col+1][row];
-          //}
-          
-         }
-        }        
-        else if(lineVertices[col][row] >= 0 && intersects[col+1][row] > 0) {
-          if(purple){
-            //if(lineEndpoints[x][lineVertices[col][row]][x2] != intersects[col+1][row]){
-              stroke(255,0,255);
-              lineEndpoints[x][lineVertices[col][row]][x2] = intersects[col+1][row];
-              line(x, lineVertices[col][row], x2,intersects[col+1][row]);
-            //}
-          }
-        }
-        else if( intersects[col][row] > 0 && intersects[col+1][row] > 0 ) {
-         if(red){     
-          //if(lineEndpoints[x][intersects[col][row]][x2] != intersects[col+1][row]){
-            stroke(255, 0, 0);
-            lineEndpoints[x][intersects[col][row]][x2] = intersects[col+1][row];
-            line(x, intersects[col][row], x2, intersects[col+1][row]);
-          //}
-         }
-        }        
-      } // end col loop
-    } // end row
       
   
-  if (bExportSVG && exporting){
+  if (beginExportSVG && exporting){
     println("finished export");
     // P3D needs end Raw
     //endRaw();
     endRecord();
-    bExportSVG = false;
+    beginExportSVG = false;
     exporting = false;
   }
  
@@ -208,38 +99,20 @@ public void draw() {
   mousePosition();
 }
 
-void mousePosition(){
-    // pan according to mouse position
-   if (mousePressed == true) {  
-     offsetx=offsetx+((mouseX-256)/64);
-     offsety=offsety+((mouseY-256)/64);
-     offsetx=offsetx + 1;
-     offsety=offsety + 1;
-   
-    // prevent going off the model edges
-    if (offsetx>1201-50) offsetx=1201-50;
-    if (offsetx<0) offsetx=0;
-    if (offsety>1201-80) offsety=1201-80;
-    if (offsety<80) offsety=80; 
-  }
-}
 
 void plotLineVertices(){
   //79 rows / 49 cols
-    for (int col=3;col<49;col++) {  
+  for (int col=0;col<49;col++) {  
     //for (int row=0;row<79;row++) {
     int x=0;
     //for (int col=2;col<49;col++) {
     for (int row=0;row<79;row++) {
       int y=511-(5*row);
-      //x=10*col;
       x=col;
       int tx=x+10;
       int ty=y;
       //plotLine(x,y-(int)elev[col][row],tx,ty-(int)elev[col+1][row]);
-       bresenhamVertices(row,col,x,y-(int)elev[col][row],tx,ty-(int)elev[col+1][row]);
-      // optional crosshatch..
-      //if (hatch) plotLine(x,y-(int)elev[col][row],tx,ty-5-(int)elev[col+1][row+1]);
+      bresenhamVertices(row,col,x,y-(int)elev[col][row],tx,ty-(int)elev[col+1][row]);
       x=tx;
       y=ty;
     }
@@ -249,9 +122,6 @@ void plotLineVertices(){
 
 void bresenhamVertices(int row, int col, int x0, int y0, int x1, int y1){
   // modified bresenham algorithm
-  // lines are drawn from frontmost to backmost, and a point is only shown IF
-  // its y coordinate is closer to the top of the screen than any pixel drawn in this column.
-  // This implements a very simpleform of hidden line removal.pri
   // Based on algorithm at
   // http://free.pages.at/easyfilter/bresenham.html
  
@@ -284,8 +154,7 @@ public void loadDEM() {
   elevation=new int[1201][1201];
   felevation=new float[1201][1201];
   
-  byte b[] = loadBytes(filepath); // sample data - scottish borders, with edinburgh near top-right corner
-  //byte b[] = loadBytes("brooklyn_maybe.hgt");
+  byte b[] = loadBytes(filepath); 
   int ix=0;
   maxheight=0;
   for (int row=0;row<1201;row++) {
@@ -294,19 +163,18 @@ public void loadDEM() {
       int hi = b[ix] & 0xff;
       int lo = b[ix+1] & 0xff;
       int el=(int)((hi<<8)|lo); // big endian!
-      //if (el==32768) {
-      if (el > 32000) {
-        //TODO - handle voids (missing satellite data)
-        //probably average the neighbours in a second pass?
+      // 32768 should be max height, but it's not for some reason
+      if (el > 32700) { 
+        //For voids, we just take the last value on the West
         if(col > 0){
-          elevation[row][col]= elevation[row][col -1 ];
+          elevation[row][col]= elevation[row][col -1];
         } else {
           elevation[row][col]=el;
         }
       } else {
         elevation[row][col]=el;
       }
-      if (el>maxheight && el<32000) maxheight=el;
+      if (el>maxheight && el<32700) maxheight=el;
       ix+=2;
     }
   }
@@ -317,4 +185,37 @@ public void loadDEM() {
     }
   }
   println("Loaded DEM");
+}
+
+
+public void resetArrays(){
+  for (int row = 0; row < 512; row++) {
+   for (int col = 0; col < 512; col++) {
+      lineVertices[row][col] = -1;
+      intersects[row][col] = -1;
+   }
+  }
+  miny=new int[512];
+  //lineEndpoints = new int[512][512][512];
+  for (int i=0;i<512;i++) miny[i]=512;
+}
+
+public void animateCurve() {
+  // load part of the DEM into the elevation buffer for display
+  elev=new float[51][80];
+  for (int x=0;x<51;x++) {
+    for (int y=0;y<80;y++) {
+      int ax=offsetx+x;
+      int ay=offsety-y;
+      if (ax<0) ax=1200;
+      if (ay<0) ay=1200;
+      if (ax>1200) ax=0;
+      if (ay>1200) ay=0;
+      elev[x][y]=verticalScale*felevation[ay][ax];
+    }
+  }
+}
+
+public void exportSVG(){
+  beginExportSVG = true;
 }
