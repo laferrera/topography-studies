@@ -4,9 +4,6 @@
 
 import java.util.*;
 import processing.svg.*; 
-import ch.bildspur.postfx.builder.*;
-import ch.bildspur.postfx.pass.*;
-import ch.bildspur.postfx.*; 
 import drop.*;
 import controlP5.*;
 public int[] miny;
@@ -25,14 +22,13 @@ int offsety=200;
  
 boolean hatch=false;
 boolean beginExportSVG = false;
-boolean exporting = false;
+boolean exporting = true;
 boolean green = true;
 boolean purple = true;
 boolean red = true;
 
 ControlFrame cf;
 SDrop drop;
-PostFX fx;
 
 color bgColor = 255;
 color lineColor = 0;
@@ -43,8 +39,12 @@ String filepath = "N22W106.hgt";
 float verticalScale=1.0;
 float xspace = 1;
 float yspace = 1;
+boolean displayFilename = false;
+boolean displayBox = false;
+boolean displayOffset = false;
 
-int xRenderOffset = 10;
+
+int xRenderOffset = 75;
 int yRenderOffset = 10;
 
  
@@ -74,6 +74,7 @@ public void draw() {
   }
 
   generateLines();
+  renderBox();
 
       
   
@@ -86,63 +87,7 @@ public void draw() {
     exporting = false;
   }
  
- 
- // docs 
- // https://github.com/cansik/processing-postfx
- //fx.render()
- //   //.blur(10, 10)
- //   //.bloom(0.5, 100, 100)
- //   //.chromaticAberration()
- //   .compose();
- 
- 
   mousePosition();
-}
-
-
-void plotLineVertices(){
-  //79 rows / 49 cols
-  for (int col=0;col<49;col++) {  
-    //for (int row=0;row<79;row++) {
-    int x=0;
-    //for (int col=2;col<49;col++) {
-    for (int row=0;row<79;row++) {
-      int y=511-(5*row);
-      x=col;
-      int tx=x+10;
-      int ty=y;
-      //plotLine(x,y-(int)elev[col][row],tx,ty-(int)elev[col+1][row]);
-      bresenhamVertices(row,col,x,y-(int)elev[col][row],tx,ty-(int)elev[col+1][row]);
-      x=tx;
-      y=ty;
-    }
-  }
-}
-
-
-void bresenhamVertices(int row, int col, int x0, int y0, int x1, int y1){
-  // modified bresenham algorithm
-  // Based on algorithm at
-  // http://free.pages.at/easyfilter/bresenham.html
- 
-  int dx =  abs(x1-x0), sx = x0<x1 ? 1 : -1;
-  int dy = -abs(y1-y0), sy = y0<y1 ? 1 : -1;
-  int err = dx+dy, e2; /* error value e_xy */
-  
-  for(;;){  /* loop */
-    
-    //if(y0 > miny[x0]) intersects[col][row] = y0;
-    if(y0 == miny[x0]) intersects[col][row] = y0;
-    if (y0<miny[x0]) {
-      if (y0<0 || y0>511) break;
-      lineVertices[col][row] = y0;
-      miny[x0]=y0;
-    }
-    if (x0==x1 && y0==y1) break;
-    e2 = 2*err;
-    if (e2 >= dy) { err += dy; x0 += sx; } /* e_xy+e_x > 0 */
-    if (e2 <= dx) { err += dx; y0 += sy; } /* e_xy+e_y < 0 */
-  }
 }
 
 
@@ -202,8 +147,8 @@ public void resetArrays(){
 
 public void animateCurve() {
   // load part of the DEM into the elevation buffer for display
-  elev=new float[51][80];
-  for (int x=0;x<51;x++) {
+  elev=new float[52][80];
+  for (int x=0;x<52;x++) {
     for (int y=0;y<80;y++) {
       int ax=offsetx+x;
       int ay=offsety-y;
@@ -218,4 +163,47 @@ public void animateCurve() {
 
 public void exportSVG(){
   beginExportSVG = true;
+}
+
+void plotLineVertices(){
+  //79 rows / 49 cols
+  for (int col=0;col<51;col++) {  
+    //int x=0;
+    for (int row=0;row<80;row++) {
+      int y=512-(5*row);
+      int x=col;
+      int tx=x+10;
+      int ty=y;
+      //plotLine(x,y-(int)elev[col][row],tx,ty-(int)elev[col+1][row]);
+      bresenhamVertices(row,col,x,y-(int)elev[col][row],tx,ty-(int)elev[col+1][row]);
+      x=tx;
+      y=ty;
+    }
+  }
+}
+
+
+void bresenhamVertices(int row, int col, int x0, int y0, int x1, int y1){
+  // modified bresenham algorithm
+  // Based on algorithm at
+  // http://free.pages.at/easyfilter/bresenham.html
+ 
+  int dx =  abs(x1-x0), sx = x0<x1 ? 1 : -1;
+  int dy = -abs(y1-y0), sy = y0<y1 ? 1 : -1;
+  int err = dx+dy, e2; /* error value e_xy */
+  
+  for(;;){  /* loop */
+    
+    //if(y0 > miny[x0]) intersects[col][row] = y0;
+    if(y0 == miny[x0]) intersects[col][row] = y0;
+    if (y0<miny[x0]) {
+      if (y0<0 || y0>511) break;
+      lineVertices[col][row] = y0;
+      miny[x0]=y0;
+    }
+    if (x0==x1 && y0==y1) break;
+    e2 = 2*err;
+    if (e2 >= dy) { err += dy; x0 += sx; } /* e_xy+e_x > 0 */
+    if (e2 <= dx) { err += dx; y0 += sy; } /* e_xy+e_y < 0 */
+  }
 }

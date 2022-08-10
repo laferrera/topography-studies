@@ -5,9 +5,9 @@ public void generatePoints(){
 }
 
 public void generateLines(){
-      for (int row=0;row<512;row++) {
+      for (int row=0;row<80;row++) {
       noFill();
-       for (int col=0;col<510;col++) {
+       for (int col=0;col<51;col++) {
         stroke(lineColor);         
         int x = xRenderOffset + col * 10;
         int x2 = xRenderOffset + (col + 1) * 10;
@@ -46,4 +46,12 @@ public void generateLines(){
         }        
       } // end col loop
     } // end row
+}
+
+public void renderBox(){
+  stroke(lineColor);
+  line(xRenderOffset, yRenderOffset, xRenderOffset, yRenderOffset+512);
+  line(xRenderOffset, yRenderOffset + 512, xRenderOffset + 500, yRenderOffset+512);  
+  line(xRenderOffset + 500, yRenderOffset+512, xRenderOffset + 500, yRenderOffset);
+  line(xRenderOffset + 500, yRenderOffset, xRenderOffset, yRenderOffset);
 }

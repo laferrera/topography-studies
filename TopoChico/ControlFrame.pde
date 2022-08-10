@@ -68,6 +68,7 @@ class ControlFrame extends PApplet {
       filepath = theDropEvent.filePath();
       println("file()\t"+theDropEvent.filePath());
       loadDEM();
+      generatePoints();
     }
   }
 
