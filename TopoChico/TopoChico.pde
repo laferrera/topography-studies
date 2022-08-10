@@ -174,8 +174,12 @@ void plotLineVertices(){
       int x=col;
       int tx=x+10;
       int ty=y;
-      //plotLine(x,y-(int)elev[col][row],tx,ty-(int)elev[col+1][row]);
       bresenhamVertices(row,col,x,y-(int)elev[col][row],tx,ty-(int)elev[col+1][row]);
+      //int y0 = y-(int)elev[col][row];
+      //if (y0 < miny[x] && y0 >= 0 && y0 <= 511){
+      //  lineVertices[col][row] = y0;
+      //  miny[x]=y0;
+      //}
       x=tx;
       y=ty;
     }
