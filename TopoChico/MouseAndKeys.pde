@@ -20,6 +20,6 @@ void mousePosition(){
     if (offsetx<0) offsetx=0;
     if (offsety>1201-80) offsety=1201-80;
     if (offsety<80) offsety=80;
-    generatePoints();
+    shouldRedraw = true;
   }
 }

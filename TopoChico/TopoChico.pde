@@ -6,14 +6,15 @@ import java.util.*;
 import processing.svg.*; 
 import drop.*;
 import controlP5.*;
-public int[] miny;
+public int[] dotMatrixMinY;
+public int[] lineVerticesMinY;
 public float[][] elev;
  
 int[][] elevation; // elevations in meters
 float[][] felevation; // scaled to range [0,1] where 1=max
 int[][] lineVertices;
-int[][] intersects;
-int[][][] lineEndpoints;
+int[][] dotMatrix;
+
 int maxheight;
  
 // position in the DEM
@@ -34,26 +35,32 @@ color bgColor = 255;
 color lineColor = 0;
 
 String filepath = "N22W106.hgt";
+String filename = "N22W106.hgt";
 
 // cp5 params
 float verticalScale=1.0;
 float xspace = 1;
 float yspace = 1;
-boolean displayFilename = false;
-boolean displayBox = false;
+boolean shouldDisplayInfo = true;
+boolean shouldDisplayBox = false;
 boolean displayOffset = false;
-
+boolean shouldRedraw = true;
+boolean shouldDrawCurves = false;
 
 int xRenderOffset = 75;
 int yRenderOffset = 10;
 
+PFont myFont;
  
 public void setup() {
   size(640,640);
+  background(bgColor);
   surface.setLocation(10, 250);
   lineVertices = new int[512][512];
-  intersects = new int[512][512];
-  lineEndpoints = new int[512][512][512];
+  dotMatrix = new int[512][512];
+  dotMatrixMinY = new int[512];
+  lineVerticesMinY = new int[512];
+  myFont = loadFont("04b03-12.vlw");
   loadDEM();
   generatePoints();
   //fx = new PostFX(this);
@@ -62,7 +69,7 @@ public void setup() {
 }
   
 public void draw() {
-  background(bgColor);
+  
 
 
   if (beginExportSVG){
@@ -73,8 +80,21 @@ public void draw() {
     beginRecord(SVG, "data/exports/export_"+timestamp()+".svg");
   }
 
-  generateLines();
-  renderBox();
+  if(shouldRedraw || exporting ){
+    background(bgColor);
+    generatePoints();
+    experimentalRenderLines();
+    //if(shouldDrawCurves){
+    //  //renderCurvedLines();
+    //  renderLines();
+    //} else {
+    //  //renderLines();
+    //  experimentalRenderLines();
+    //}
+    renderBox();
+    renderInfo();
+    shouldRedraw = false;
+  }
 
       
   
@@ -135,14 +155,13 @@ public void loadDEM() {
 
 public void resetArrays(){
   for (int row = 0; row < 512; row++) {
+   dotMatrixMinY[row] = 512;
+   lineVerticesMinY[row] = 512;
    for (int col = 0; col < 512; col++) {
       lineVertices[row][col] = -1;
-      intersects[row][col] = -1;
+      dotMatrix[row][col] = -1;
    }
   }
-  miny=new int[512];
-  //lineEndpoints = new int[512][512][512];
-  for (int i=0;i<512;i++) miny[i]=512;
 }
 
 public void animateCurve() {
@@ -170,18 +189,12 @@ void plotLineVertices(){
   for (int col=0;col<51;col++) {  
     //int x=0;
     for (int row=0;row<80;row++) {
-      int y=512-(5*row);
-      int x=col;
-      int tx=x+10;
-      int ty=y;
-      bresenhamVertices(row,col,x,y-(int)elev[col][row],tx,ty-(int)elev[col+1][row]);
-      //int y0 = y-(int)elev[col][row];
-      //if (y0 < miny[x] && y0 >= 0 && y0 <= 511){
-      //  lineVertices[col][row] = y0;
-      //  miny[x]=y0;
-      //}
-      x=tx;
-      y=ty;
+      int y = 512-(5*row);
+      int x0 = col * 10;
+      int y0 = y-(int)elev[col][row];
+      int x1 = x0 + 10;
+      int y1 = y-(int)elev[col+1][row];
+      bresenhamVertices(row,col,x0,y0, x1, y1);
     }
   }
 }
@@ -195,19 +208,26 @@ void bresenhamVertices(int row, int col, int x0, int y0, int x1, int y1){
   int dx =  abs(x1-x0), sx = x0<x1 ? 1 : -1;
   int dy = -abs(y1-y0), sy = y0<y1 ? 1 : -1;
   int err = dx+dy, e2; /* error value e_xy */
+  boolean setLineVertices = false;
   
   for(;;){  /* loop */
-    
-    //if(y0 > miny[x0]) intersects[col][row] = y0;
-    if(y0 == miny[x0]) intersects[col][row] = y0;
-    if (y0<miny[x0]) {
+    if (y0<dotMatrixMinY[x0]) {
+      if (y0<0 || y0>511) break;
+      dotMatrix[x0][row] = y0;
+      dotMatrixMinY[x0]=y0;
+    }
+    if (!setLineVertices && y0<lineVerticesMinY[col]) {
       if (y0<0 || y0>511) break;
       lineVertices[col][row] = y0;
-      miny[x0]=y0;
+      lineVerticesMinY[col]=y0;
+      setLineVertices = true;
     }
-    if (x0==x1 && y0==y1) break;
+    
+    
+    if (x0==x1) break;
     e2 = 2*err;
     if (e2 >= dy) { err += dy; x0 += sx; } /* e_xy+e_x > 0 */
     if (e2 <= dx) { err += dx; y0 += sy; } /* e_xy+e_y < 0 */
   }
+   
 }
