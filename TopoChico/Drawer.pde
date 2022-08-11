@@ -92,6 +92,7 @@ public void experimentalRenderCurvedLines(){
           if(!inShape){
             beginShape();
             inShape = true;
+            curveVertex(x, yRenderOffset + lineVertices[col][row]);
           }
           curveVertex(x, yRenderOffset + lineVertices[col][row]);
         } 
@@ -99,6 +100,7 @@ public void experimentalRenderCurvedLines(){
           if(inShape){
             endShape();
             inShape = false;
+            curveVertex(x, yRenderOffset + lineVertices[col][row]);
           }
           if(col < 50){           
             int dotX = col * 10;
