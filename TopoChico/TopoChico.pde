@@ -83,7 +83,9 @@ public void draw() {
   if(shouldRedraw || exporting ){
     background(bgColor);
     generatePoints();
-    experimentalRenderLines();
+    //experimentalRenderLines();
+    experimentalRenderCurvedLines();
+    //renderCurvedLines();    
     //if(shouldDrawCurves){
     //  //renderCurvedLines();
     //  renderLines();
