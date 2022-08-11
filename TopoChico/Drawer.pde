@@ -73,7 +73,7 @@ public void experimentalRenderLines(){
             int dotX2 = (col + 1) * 10;  
              while(dotX < dotX2){           
              if( dotMatrix[dotX][row] >= 0 && dotMatrix[dotX + 1][row] >= 0){
-              //stroke(255,0,0); 
+              stroke(255,0,0); 
               line((xRenderOffset + dotX), (yRenderOffset + dotMatrix[dotX][row]), 
                   (xRenderOffset + dotX + 1), (yRenderOffset + dotMatrix[dotX+1][row])
                   );

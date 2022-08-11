@@ -23,7 +23,7 @@ int offsety=200;
  
 boolean hatch=false;
 boolean beginExportSVG = false;
-boolean exporting = true;
+boolean exporting = false;
 boolean green = true;
 boolean purple = true;
 boolean red = true;
