@@ -1,6 +1,7 @@
 // DEM Viewer 
 // uses the SRTM .HGT binary format.
 // DEM from http://srtm.csi.cgiar.org/
+// might be better http://viewfinderpanoramas.org/Coverage%20map%20viewfinderpanoramas_org3.htm
 
 import java.util.*;
 import processing.svg.*; 
@@ -69,7 +70,10 @@ public void setup() {
 }
   
 public void draw() {
-  
+  if(shouldRedraw || exporting){
+    // putting BG on export gives us a bounding box
+    background(bgColor);
+  }
 
 
   if (beginExportSVG){
@@ -77,22 +81,14 @@ public void draw() {
     exporting = true;
     // P3D needs begin Raw
     //beginRaw(SVG, "data/exports/export_"+timestamp()+".svg");
-    beginRecord(SVG, "data/exports/export_"+timestamp()+".svg");
+    beginRecord(SVG, "data/exports/export_"+getClass().getName()+"_"+filename+"_"+timestamp()+".svg");
   }
 
   if(shouldRedraw || exporting ){
-    background(bgColor);
     generatePoints();
     //experimentalRenderLines();
-    experimentalRenderCurvedLines();
+    experimentalRenderCurvedLines(); // i think this is the best one?
     //renderCurvedLines();    
-    //if(shouldDrawCurves){
-    //  //renderCurvedLines();
-    //  renderLines();
-    //} else {
-    //  //renderLines();
-    //  experimentalRenderLines();
-    //}
     renderBox();
     renderInfo();
     shouldRedraw = false;

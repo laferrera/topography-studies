@@ -1,4 +1,5 @@
 public void keyPressed() {
+  shouldRedraw = true;
   if (key=='h' || key=='H') hatch=!hatch;
   if (key == 'e') beginExportSVG = true;
   if (key == 'g') green = !green;

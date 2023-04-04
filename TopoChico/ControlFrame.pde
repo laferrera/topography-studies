@@ -53,6 +53,15 @@ class ControlFrame extends PApplet {
        .setMode(ControlP5.SWITCH)
      ;
      
+     cp5.addToggle("info?")
+       .plugTo(parent, "shouldDisplayInfo")
+       .setPosition(20, 90)
+       .setSize(100, 10)
+       .setValue(true)
+       .setMode(ControlP5.SWITCH)
+     ;
+     
+     
      // cp5.addToggle("Curves?")
      //  .plugTo(parent, "shouldDrawCurves")
      //  .setPosition(20, 90)
@@ -89,7 +98,7 @@ class ControlFrame extends PApplet {
   void dropEvent(DropEvent theDropEvent) {
     // docs
     // https://transfluxus.github.io/drop/
-    println("dropTargetDropEvent()\t"+theDropEvent.dropTargetDropEvent());
+    //println("dropTargetDropEvent()\t"+theDropEvent.dropTargetDropEvent());
     if(theDropEvent.isFile()){
       filepath = theDropEvent.filePath();
       println("loading file:\t"+theDropEvent.filePath());
